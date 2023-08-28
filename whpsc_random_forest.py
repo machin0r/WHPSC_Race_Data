@@ -211,7 +211,7 @@ class RaceRandomForest:
                                                          in_train_women,
                                                          features,
                                                          line_kw={'color':
-                                                                  '#6c2995'}))
+                                                                  '#006b92'}))
 
         # Iterate through the mens and womens plot to design the plot style
         for plot in [partial_dependency_plot_men, partial_dependency_plot_women]:
@@ -264,7 +264,7 @@ class RaceRandomForest:
         ax_rfr_residuals.scatter(predicted_speed_men, residuals_men,
                                  color = "#ff8000", label="Men")
         ax_rfr_residuals.scatter(predicted_speed_women, residuals_women,
-                                 color = "#6c2995", label="Women")
+                                 color = "#006b92", label="Women")
         ax_rfr_residuals.plot((-1,100),(0,0), color='black', linewidth=1)
         # Format the axis
         ax_rfr_residuals = self.plot_formatter(ax_rfr_residuals,
@@ -282,7 +282,7 @@ class RaceRandomForest:
         ax_rfr_predictions.scatter(actual_speed_men, predicted_speed_men,
                                    color = "#ff8000", label="Men")
         ax_rfr_predictions.scatter(actual_speed_women, predicted_speed_women,
-                                   color = "#6c2995", label="Women")
+                                   color = "#006b92", label="Women")
 
         # Plot the R2 line on the graph for the men
         x_residual_line_men = actual_speed_men.tolist()
@@ -300,7 +300,7 @@ class RaceRandomForest:
         coef_women = np.polyfit(x_residual_line_women,y_residual_line_women,1)
         poly1d_fn_women = np.poly1d(coef_women)
         plt.plot(x_residual_line_women, poly1d_fn_women(x_residual_line_women),
-                 color='#4d248b')
+                 color='#00b590')
         r2_text_women = "Women $R^{2}$ = " + str(round(score_women,3))
         ax_rfr_predictions.text(72.5, 60, r2_text_women, fontsize=14, color='white')
 

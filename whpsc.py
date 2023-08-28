@@ -681,9 +681,7 @@ class RaceAnalysis:
         Returns two plots, a scatter of wind speed vs rider speed, and a bar
         chart of % successful or failed runs for am and pm
         '''
-        # colours = ["#011261", "#2c1c79", "#4d248b", "#6c2995", "#8a2f97",
-        #            "#a63591", "#c03e82", "#d7486d", "#ea5752", "#f86934",
-        #            "#ff8000"]
+        colours_wind = ['#006b92', '#00b590', '#ea5752', '#ff8000']
 
         # Copys the successful runs dataframe
         wind_df_leg = (self.all_successful_runs[self.all_successful_runs
@@ -742,13 +740,13 @@ class RaceAnalysis:
         # independently of one another
         ax_wind_speed_scat = fig_wind_speed_scatter.add_axes(rect, frameon=False)
         ax_wind_speed_scat.scatter(wind_legal_am,speed_legal_am,
-                                   label = 'Legal wind am', color=colours[2])
+                                   label = 'Legal wind am', color=colours_wind[0])
         ax_wind_speed_scat.scatter(wind_illegal_am,speed_illegal_am,
-                                   label = 'Illegal wind am', color=colours[4])
+                                   label = 'Illegal wind am', color=colours_wind[1])
         ax_wind_speed_scat.scatter(wind_legal_pm,speed_legal_pm,
-                                   label = 'Legal wind pm', color=colours[-3])
+                                   label = 'Legal wind pm', color=colours_wind[2])
         ax_wind_speed_scat.scatter(wind_illegal_pm,speed_illegal_pm,
-                                   label = 'Illegal wind pm', color=colours[-1])
+                                   label = 'Illegal wind pm', color=colours_wind[3])
 
         # Plot is formatted, and and x axis label is added
         ax_wind_speed_scat = self.plot_formatter(ax_wind_speed_scat,
@@ -808,10 +806,10 @@ class RaceAnalysis:
         ax_wind_speed_bar = fig_wind_speed_bar.add_axes(rect, frameon=False)
 
         # Plot four bars, Legal ad Illegal for each am and pm
-        ax_wind_speed_bar.bar("Legal am", len(speed_legal_am)/total_am, color=colours[2])
-        ax_wind_speed_bar.bar("Illegal am", len(speed_illegal_am)/total_am, color=colours[3])
-        ax_wind_speed_bar.bar("Legal pm", len(speed_legal_pm)/total_pm, color=colours[-2])
-        ax_wind_speed_bar.bar("Illegal pm", len(speed_illegal_pm)/total_pm, color=colours[-1])
+        ax_wind_speed_bar.bar("Legal am", len(speed_legal_am)/total_am, color=colours_wind[0])
+        ax_wind_speed_bar.bar("Illegal am", len(speed_illegal_am)/total_am, color=colours_wind[1])
+        ax_wind_speed_bar.bar("Legal pm", len(speed_legal_pm)/total_pm, color=colours_wind[2])
+        ax_wind_speed_bar.bar("Illegal pm", len(speed_illegal_pm)/total_pm, color=colours_wind[3])
 
         # Axis formatted, and y axis label allowed to be decimal
         ax_wind_speed_bar = self.plot_formatter(ax_wind_speed_bar,
