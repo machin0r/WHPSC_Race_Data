@@ -354,9 +354,9 @@ class RaceAnalysis:
         This will calcualte the average speed per year of the men's and women's
         leg powered runs (the two most popular categories)
         It will also calculate the first and third quartile to plot around the
-        mean
+        median
 
-        It will return a line chart with the mean and quartiles plotted
+        It will return a line chart with the median and quartiles plotted
         '''
         # colours = ["#011261", "#2c1c79", "#4d248b", "#6c2995", "#8a2f97",
         #            "#a63591", "#c03e82", "#d7486d", "#ea5752", "#f86934",
@@ -378,7 +378,7 @@ class RaceAnalysis:
         # Long loop function that selects the category (Men then Women),
         # Converts the speeds to a number and replaces non-numerical values
         # with NaNs which are then removed
-        # The 1st and 3rd quartile, and mean are then calcualted
+        # The 1st and 3rd quartile, and median are then calcualted
         # This process is done for the Mens Leg then Womens Leg
         for key, value in self.race_information_dict.items():
             men_avg_speed[key] = value[value['Record Attempt']  == 'Mens Leg']
@@ -393,7 +393,7 @@ class RaceAnalysis:
             men_quartiles[key] = (men_avg_speed[key]['Speed (MPH)']
                                   .quantile([0.25,0.75], interpolation='lower'))
             men_avg_speed[key] = (men_avg_speed[key].loc[:, 'Speed (MPH)']
-                                  .mean())
+                                  .median())
 
             women_avg_speed[key] = value[value
                                          ['Record Attempt']  == 'Womens Leg']
@@ -408,9 +408,9 @@ class RaceAnalysis:
             women_quartiles[key] = (women_avg_speed[key]['Speed (MPH)']
                                     .quantile([0.25,0.75], interpolation='lower'))
             women_avg_speed[key] = (women_avg_speed[key].loc[:, 'Speed (MPH)']
-                                  .mean())
+                                  .median())
 
-        # The means of the Mens and Womens catefories are plotted by year
+        # The median of the Mens and Womens catefories are plotted by year
         ax_avg_speed_per_year.plot(list(men_avg_speed.keys()),
                                    list(men_avg_speed.values()),
                                    color=colours[3],
@@ -858,12 +858,12 @@ if __name__ == '__main__':
     #  partial_dependency_plot_men) = analysis.random_forest_analysis()
 
 
-    # fig_nationality_image.savefig('images/rider_nationality.png', dpi=300, bbox_inches='tight')
-    # fig_unique_bikes_image.savefig('images/unique_bikes.png', dpi=300, bbox_inches='tight')
-    # fig_average_speeds.savefig('images/avg_speeds.png', dpi=300, bbox_inches='tight')
-    # fig_unique_riders_image.savefig('images/unique_riders.png', dpi=300, bbox_inches='tight')
-    # fig_wind_speed_scatter.savefig('images/wind_speed_scatter.png', dpi=300, bbox_inches='tight')
-    # fig_wind_speed_bar.savefig('images/wind_speed_bar.png', dpi=300, bbox_inches='tight')
-    # fig_rfr_predictions.savefig('images/rfr_plot.png', dpi=300, bbox_inches='tight')
-    # fig_rfr_residuals.savefig('images/rfr_residuals.png', dpi=300, bbox_inches='tight')#
-    # fig_records_per_year_image.savefig('rimages/ecord.png', dpi=300, bbox_inches='tight')
+    # fig_nationality_image.savefig('./images/rider_nationality.png', dpi=300, bbox_inches='tight')
+    # fig_unique_bikes_image.savefig('./images/unique_bikes.png', dpi=300, bbox_inches='tight')
+    # fig_average_speeds.savefig('./images/avg_speeds.png', dpi=300, bbox_inches='tight')
+    # fig_unique_riders_image.savefig('./images/unique_riders.png', dpi=300, bbox_inches='tight')
+    # fig_wind_speed_scatter.savefig('./images/wind_speed_scatter.png', dpi=300, bbox_inches='tight')
+    # fig_wind_speed_bar.savefig('./images/wind_speed_bar.png', dpi=300, bbox_inches='tight')
+    # fig_rfr_predictions.savefig('./images/rfr_plot.png', dpi=300, bbox_inches='tight')
+    # fig_rfr_residuals.savefig('./images/rfr_residuals.png', dpi=300, bbox_inches='tight')#
+    # fig_records_per_year_image.savefig('./images/ecord.png', dpi=300, bbox_inches='tight')
