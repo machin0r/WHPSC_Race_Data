@@ -7,4 +7,4 @@ Analysis and visualisation of the World Human Powered Speed Challenge races from
 
 Two random forest regression models are created for the Men's and Women's Single Rider 200m Flying Start races respectively.
 
-<img src="/images/whpsc_infographic.png?raw=true"/>
+<img src="/images/whpsc_race_infographic.png?raw=true"/>
