@@ -12,6 +12,10 @@ import numpy as np
 from scipy.interpolate import make_interp_spline
 import seaborn as sns
 import whpsc_random_forest
+import dash
+from dash import dcc, html
+from dash.dependencies import Input, Output
+import plotly.graph_objs as go
 
 
 file_path = Path(__file__).with_name('race_results.xlsx')
@@ -109,7 +113,7 @@ class RaceAnalysis:
         return figure, rect
 
     def rider_nationality(self):
-        '''This fucntion produces a stackplot of the rider nationalities 
+        '''This function produces a stackplot of the rider nationalities 
         for each year
         It returns the stackplot figure'''
         # Set up dictionaries to store the data from the dataframe
@@ -164,24 +168,42 @@ class RaceAnalysis:
                                '#425c7c', '#AA689a', '#695fcb', '#b133da',
                                '#e70091', '#ff8000']
 
-        # Create the figure for the plot
-        fig_nationality, rect = self.figure_creator(20,10)
+        # # Create the figure for the plot
+        # fig_nationality, rect = self.figure_creator(20,10)
 
-        # Create the plot
-        ax_nationality = fig_nationality.add_axes(rect, frameon=False)
-        ax_nationality.stackplot(x_axis_smooth,
-                                 countries_melt_piv_smooth.values.T,
-                                 colors=nationality_colours, labels = countries_list,
-                                 edgecolor="#000000", linewidth=1.5)
+        # # Create the plot
+        # ax_nationality = fig_nationality.add_axes(rect, frameon=False)
+        # ax_nationality.stackplot(x_axis_smooth,
+        #                          countries_melt_piv_smooth.values.T,
+        #                          colors=nationality_colours, labels = countries_list,
+        #                          edgecolor="#000000", linewidth=1.5)
 
-        # Format the plot, and invert the legend so it's in the same order
-        # as the data
-        ax_nationality = self.plot_formatter(ax_nationality, y_label="Entrants")
-        ax_nationality.legend()
-        handles, labels = ax_nationality.get_legend_handles_labels()
-        ax_nationality.legend(handles[::-1], labels[::-1], loc='lower right')
-        ax_nationality.xaxis.set_major_formatter(lambda s, i : f'{s:.0f}')
+        # # Format the plot, and invert the legend so it's in the same order
+        # # as the data
+        # ax_nationality = self.plot_formatter(ax_nationality, y_label="Entrants")
+        # ax_nationality.legend()
+        # handles, labels = ax_nationality.get_legend_handles_labels()
+        # ax_nationality.legend(handles[::-1], labels[::-1], loc='lower right')
+        # ax_nationality.xaxis.set_major_formatter(lambda s, i : f'{s:.0f}')
 
+        fig_nationality = go.Figure()
+        for i, country in enumerate(countries_list):
+            fig_nationality.add_trace(go.Scatter(
+                x=x_axis_smooth,
+                y=countries_melt_piv_smooth[country],
+                mode='lines',
+                stackgroup='one',
+                name=country,
+                line=dict(color=nationality_colours[i % len(nationality_colours)])
+            ))
+        
+        fig_nationality.update_layout(
+            title='Rider Nationality Over Years',
+            xaxis_title='Year',
+            yaxis_title='Number of Entrants',
+            template='plotly_dark'
+        )
+        
         return fig_nationality
 
     def unique_bikes(self):
@@ -191,7 +213,7 @@ class RaceAnalysis:
         It returns a radial bar chart figure
         '''
 
-        # Count up the number of occurances of each bikes name in the
+        # Count up the number of occurrences of each bikes name in the
         # "Vehicle name" column, and then return the top 10
         unique_bikes_top10 = (self.all_successful_runs['Vehicle Name'].
                               value_counts().rename_axis('Vehicle Name').
@@ -200,56 +222,24 @@ class RaceAnalysis:
         unique_bikes_top10 = unique_bikes_top10.reindex(
                               index=unique_bikes_top10.index[::-1])
 
-        # Get the count for the most ridden bike
-        max_value = max(unique_bikes_top10['Count'])
-        # colours = ["#011261", "#2c1c79", "#4d248b", "#6c2995", "#8a2f97",
-        #            "#a63591", "#c03e82", "#d7486d", "#ea5752", "#f86934",
-        #            "#ff8000"]
-        # Make labels for the plot of the Name + Count
-        bike_labels = [f'   {x} ({v})' for x, v in
-                       zip(list(unique_bikes_top10['Vehicle Name']),
-                           list(unique_bikes_top10['Count']))]
+        fig_unique_bikes = go.Figure(go.Barpolar(
+            r=unique_bikes_top10['Count'],
+            theta=unique_bikes_top10['Vehicle Name'],
+            marker_color=colours[:len(unique_bikes_top10)],
+            marker_line_color="black",
+            marker_line_width=2,
+            opacity=0.8
+        ))
 
-
-        # Set up the figure
-        fig_unique_bikes, rect = self.figure_creator(10,10)
-
-        # Add axis for a polar plot
-        # Start bars at top ('N') going CCW (1)
-        ax_unique_bikes_bg = fig_unique_bikes.add_axes(rect,
-                                                       polar=True,
-                                                       frameon=False)
-        ax_unique_bikes_bg.set_theta_zero_location('N')
-        ax_unique_bikes_bg.set_theta_direction(1)
-
-        # Create a grey background for the number of items to plot (10)
-        for i in range(len(unique_bikes_top10)):
-            ax_unique_bikes_bg.barh(i, max_value*1.5*np.pi/max_value,
-                            color='grey',
-                            alpha=0.1)
-        ax_unique_bikes_bg.axis('off')
-
-        # Add axis for radial chart
-        ax_unique_bikes = fig_unique_bikes.add_axes(rect, polar=True,
-                                                    frameon=False)
-        ax_unique_bikes.set_theta_zero_location('N')
-        ax_unique_bikes.set_theta_direction(1)
-        # Add the radial grid with the labels created earlier
-        ax_unique_bikes.set_rgrids([0, 1, 2, 3, 4, 5, 6, 7 ,8, 9],
-                                   labels=bike_labels, angle=0,
-                                   fontsize=14, fontweight='bold',
-                                   color='white', verticalalignment='center')
-
-        # Loop through each entry in the dataframe and create a bar
-        for i in range(len(unique_bikes_top10)):
-            ax_unique_bikes.barh(i, list(unique_bikes_top10['Count'])[i]
-                                 *1.5*np.pi/max_value, color=colours[i])
-
-        # Hide all grid elements to make it look nicer
-        ax_unique_bikes.grid(False)
-        ax_unique_bikes.tick_params(axis='both', left=False, bottom=False,
-                                    labelbottom=False, labelleft=True)
-
+        fig_unique_bikes.update_layout(
+            title='Top 10 Most Ridden Bikes',
+            template='plotly_dark',
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, max(unique_bikes_top10['Count'])]),
+                angularaxis=dict(direction="counterclockwise")
+            )
+        )
+        
         return fig_unique_bikes
 
     def unique_riders(self):
@@ -259,7 +249,7 @@ class RaceAnalysis:
         It returns a radial bar chart figure
         '''
 
-        # Count up the number of occurances of each riders name in the
+        # Count up the number of occurrences of each riders name in the
         # "Rider" column, and then return the top 10
         unique_riders_top10 = (self.all_successful_runs['Rider'].
                               value_counts().rename_axis('Rider').
@@ -268,62 +258,30 @@ class RaceAnalysis:
         unique_riders_top10 = unique_riders_top10.reindex(
                               index=unique_riders_top10.index[::-1])
 
-        # Get the count for the riders with most runs
-        max_value = max(unique_riders_top10['Count'])
-        # colours = ["#011261", "#2c1c79", "#4d248b", "#6c2995", "#8a2f97",
-        #            "#a63591", "#c03e82", "#d7486d", "#ea5752", "#f86934",
-        #            "#ff8000"]
-        # Make labels for the plot of the Name + Count
-        rider_labels = [f'   {x} ({v})' for x, v in
-                       zip(list(unique_riders_top10['Rider']),
-                           list(unique_riders_top10['Count']))]
+        fig_unique_riders = go.Figure(go.Barpolar(
+            r=unique_riders_top10['Count'],
+            theta=unique_riders_top10['Rider'],
+            marker_color=colours[:len(unique_riders_top10)],
+            marker_line_color="black",
+            marker_line_width=2,
+            opacity=0.8
+        ))
 
-
-        # Set up the figure
-        fig_unique_riders, rect = self.figure_creator(10,10)
-
-        # Add axis for a polar plot
-        # Start bars at top ('N') going CCW (1)
-        ax_unique_riders_bg = fig_unique_riders.add_axes(rect,
-                                                       polar=True,
-                                                       frameon=False)
-        ax_unique_riders_bg.set_theta_zero_location('N')
-        ax_unique_riders_bg.set_theta_direction(1)
-
-        # Create a grey background for the number of items to plot (10)
-        for i in range(len(unique_riders_top10)):
-            ax_unique_riders_bg.barh(i, max_value*1.5*np.pi/max_value,
-                            color='grey',
-                            alpha=0.1)
-        ax_unique_riders_bg.axis('off')
-
-        # Add axis for radial chart
-        ax_unique_riders = fig_unique_riders.add_axes(rect, polar=True,
-                                                    frameon=False)
-        ax_unique_riders.set_theta_zero_location('N')
-        ax_unique_riders.set_theta_direction(1)
-        # Add the radial grid with the labels created earlier
-        ax_unique_riders.set_rgrids([0, 1, 2, 3, 4, 5, 6, 7 ,8, 9],
-                                   labels=rider_labels, angle=0,
-                                   fontsize=14, fontweight='bold',
-                                   color='white', verticalalignment='center')
-
-        # Loop through each entry in the dataframe and create a bar
-        for i in range(len(unique_riders_top10)):
-            ax_unique_riders.barh(i, list(unique_riders_top10['Count'])[i]
-                                 *1.5*np.pi/max_value, color=colours[i])
-
-        # Hide all grid elements to make it look nicer
-        ax_unique_riders.grid(False)
-        ax_unique_riders.tick_params(axis='both', left=False, bottom=False,
-                                    labelbottom=False, labelleft=True)
-
+        fig_unique_riders.update_layout(
+            title='Top 10 Riders',
+            template='plotly_dark',
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, max(unique_riders_top10['Count'])]),
+                angularaxis=dict(direction="counterclockwise")
+            )
+        )
+        
         return fig_unique_riders
 
     def records_broken(self):
         '''
         This function will determine when records are broken in each category
-        and then plot them as a line graph to show the increas
+        and then plot them as a line graph to show the increase
         '''
         # Select rows where a record was broken, and keep columns for Date,
         # speed, record (y/n), and what record was attempted
@@ -345,29 +303,16 @@ class RaceAnalysis:
             records[category]['Date'] = temp_record['Date'].tolist()
             records[category]['Speed'] = temp_record['Speed (MPH)'].tolist()
 
-        # Plot the times each record has been broken
-        for value in records.items():
-            plt.plot(value['Date'], value['Speed'])
 
     def average_speed_per_year(self):
         '''
-        This will calcualte the average speed per year of the men's and women's
+        This will calculate the average speed per year of the men's and women's
         leg powered runs (the two most popular categories)
         It will also calculate the first and third quartile to plot around the
         median
 
         It will return a line chart with the median and quartiles plotted
         '''
-        # colours = ["#011261", "#2c1c79", "#4d248b", "#6c2995", "#8a2f97",
-        #            "#a63591", "#c03e82", "#d7486d", "#ea5752", "#f86934",
-        #            "#ff8000"]
-
-        # Create the figure
-        fig_average_speed_per_year, rect = self.figure_creator(10,10)
-
-        # Create the axis
-        ax_avg_speed_per_year = (fig_average_speed_per_year
-                                 .add_axes(rect, frameon=False))
 
         # Set up the dictionaries for holding the speeds and quartiles
         men_avg_speed = {}
@@ -378,7 +323,7 @@ class RaceAnalysis:
         # Long loop function that selects the category (Men then Women),
         # Converts the speeds to a number and replaces non-numerical values
         # with NaNs which are then removed
-        # The 1st and 3rd quartile, and median are then calcualted
+        # The 1st and 3rd quartile, and median are then calculated
         # This process is done for the Mens Leg then Womens Leg
         for key, value in self.race_information_dict.items():
             men_avg_speed[key] = value[value['Record Attempt']  == 'Mens Leg']
@@ -410,21 +355,6 @@ class RaceAnalysis:
             women_avg_speed[key] = (women_avg_speed[key].loc[:, 'Speed (MPH)']
                                   .median())
 
-        # The median of the Mens and Womens catefories are plotted by year
-        ax_avg_speed_per_year.plot(list(men_avg_speed.keys()),
-                                   list(men_avg_speed.values()),
-                                   color=colours[3],
-                                   label = "Average Men's Speed")
-        ax_avg_speed_per_year.plot(list(women_avg_speed.keys()),
-                                   list(women_avg_speed.values()),
-                                   color=colours[-1],
-                                   label = "Average Women's Speed")
-
-
-        # Format the plot style
-        ax_avg_speed_per_year = self.plot_formatter(ax_avg_speed_per_year,
-                                                    y_label="Speed (MPH)")
-
         women_fill_list_lower = []
         women_fill_list_upper = []
         men_fill_list_lower = []
@@ -437,21 +367,53 @@ class RaceAnalysis:
             men_fill_list_lower.append(men_quartiles[key][0.25])
             men_fill_list_upper.append(men_quartiles[key][0.75])
 
-        # Plots the areas between the 1st and 3rd quartiles for the men
-        # and women
-        ax_avg_speed_per_year.fill_between(list(women_quartiles.keys()),
-                                           women_fill_list_upper,
-                                           women_fill_list_lower,
-                                           interpolate=True, color=colours[-2],
-                                           alpha=0.3)
-        ax_avg_speed_per_year.fill_between(list(men_quartiles.keys()),
-                                           men_fill_list_upper,
-                                           men_fill_list_lower,
-                                           interpolate=True, color=colours[4],
-                                           alpha=0.3)
-        ax_avg_speed_per_year.set_ylim(0,100)
+        # Create the Plotly figure
+        fig_average_speed_per_year = go.Figure()
 
-        ax_avg_speed_per_year.legend()
+        # Add traces for men's and women's average speeds
+        fig_average_speed_per_year.add_trace(go.Scatter(
+            x=list(men_avg_speed.keys()),
+            y=list(men_avg_speed.values()),
+            mode='lines',
+            name="Average Men's Speed",
+            line=dict(color=colours[3])
+        ))
+
+        fig_average_speed_per_year.add_trace(go.Scatter(
+            x=list(women_avg_speed.keys()),
+            y=list(women_avg_speed.values()),
+            mode='lines',
+            name="Average Women's Speed",
+            line=dict(color=colours[-1])
+        ))
+
+        # Add filled areas for quartiles
+        for gender, quartiles, color in [('Women', women_quartiles, colours[-2]), ('Men', men_quartiles, colours[4])]:
+            lower_quartile = [quartiles[key][0.25] for key in quartiles]
+            upper_quartile = [quartiles[key][0.75] for key in quartiles]
+            
+            fig_average_speed_per_year.add_trace(go.Scatter(
+                x=list(quartiles.keys()) + list(quartiles.keys())[::-1],
+                y=upper_quartile + lower_quartile[::-1],
+                fill='toself',
+                fillcolor=color,
+                line=dict(color='rgba(255,255,255,0)'),
+                hoverinfo="skip",
+                showlegend=False,
+                name=f"{gender}'s Speed Range",
+                opacity=0.3
+            ))
+
+        # Update layout
+        fig_average_speed_per_year.update_layout(
+            title='Average Speed Per Year',
+            xaxis_title='Year',
+            yaxis_title='Speed (MPH)',
+            yaxis=dict(range=[0, 100]),
+            legend_title='Category',
+            hovermode="x unified",
+            template='plotly_dark'
+        )
 
         return fig_average_speed_per_year
 
@@ -471,35 +433,47 @@ class RaceAnalysis:
                  "#b53989", "#c33f80", "#d04475", "#dc4b67", "#e65358",
                  "#ef5d49", "#f66738", "#fc7324", "#ff8000" ]
 
-        # Set up figure
-        fig_records_per_year, rect = self.figure_creator(10,10)
-        # Set up axis
-        ax_records_per_year = fig_records_per_year.add_axes(rect, frameon=False)
-
         records_per_year = {}
-        x_years = []
         # Iterate through the race information and select rows where a record
         # was broken, add to dataframe for each year, save the years as a list
         # Plot a bar for each year
-        for index, (key, value) in enumerate(self.race_information_dict.items(),
-                                             start=0):
-            records_per_year[key] = value[value['Record (y/n)']  == 'Y']
-            x_years.append(key)
-            ax_records_per_year.bar(key, len(records_per_year[key]),
-                                    color=colours_records[index])
+        for key, value in self.race_information_dict.items():
+            records_per_year[key] = value[value['Record (y/n)']  == 'Y'].shape[0]
+        #     x_years.append(key)
+        #     ax_records_per_year.bar(key, len(records_per_year[key]),
+        #                             color=colours_records[index])
 
-        # Format the axis - additional params to the function
-        ax_records_per_year = self.plot_formatter(ax_records_per_year,
-                                                  y_label="Records Broken")
-        ax_records_per_year.xaxis.set_major_formatter(lambda s, i : f'{s:,.0f}')
-        ax_records_per_year.xaxis.set_tick_params(pad=2, labelbottom=True,
-                                                  bottom=False, labelsize=14,
-                                                  labelrotation=0, color='white')
-        tick_points = [i for i in range(0, len(x_years))]
-        ax_records_per_year.set_xticks(tick_points, x_years,
-                                       color='white', fontsize=12,
-                                       fontweight='bold', rotation=45,
-                                       ha="right")
+        # # Format the axis - additional params to the function
+        # ax_records_per_year = self.plot_formatter(ax_records_per_year,
+        #                                           y_label="Records Broken")
+        # ax_records_per_year.xaxis.set_major_formatter(lambda s, i : f'{s:,.0f}')
+        # ax_records_per_year.xaxis.set_tick_params(pad=2, labelbottom=True,
+        #                                           bottom=False, labelsize=14,
+        #                                           labelrotation=0, color='white')
+        # tick_points = [i for i in range(0, len(x_years))]
+        # ax_records_per_year.set_xticks(tick_points, x_years,
+        #                                color='white', fontsize=12,
+        #                                fontweight='bold', rotation=45,
+        #                                ha="right")
+        
+        # Create the Plotly figure
+        fig_records_per_year = go.Figure()
+
+        # Add traces for men's and women's average speeds
+        fig_records_per_year.add_trace(go.Bar(
+            x=list(records_per_year.keys()),
+            y=list(records_per_year.values()),
+            marker_color=colours_records[:len(records_per_year)],
+            name="Records per Year"
+        ))
+
+        # Update layout
+        fig_records_per_year.update_layout(
+            title='Records per Year',
+            template='plotly_dark',
+            xaxis_title='Year',
+            yaxis_title='Number of Records Broken'
+        )
 
         return fig_records_per_year
 
@@ -840,28 +814,105 @@ class RaceAnalysis:
         return (fig_rfr_predictions, fig_rfr_residuals,
                 partial_dependency_plot_women, partial_dependency_plot_men)
 
+# if __name__ == '__main__':
+#     race_info = RaceInformation(file_path)
+#     analysis = RaceAnalysis(race_info)
+#     # fig_nationality_image = analysis.rider_nationality()
+#     # fig_unique_bikes_image = analysis.unique_bikes()
+#     # fig_average_speeds = analysis.average_speed_per_year()
+#     # fig_records_per_year_image = analysis.records_per_year()
+#     # analysis.arion()
+#     analysis.stats()
+#     # fig_unique_riders_image = analysis.unique_riders()
+#     # fig_wind_speed_scatter, fig_wind_speed_bar = analysis.wind_to_speed_leg()
+#     # (fig_rfr_predictions, fig_rfr_residuals,
+#     #  partial_dependency_plot_women,
+#     #  partial_dependency_plot_men) = analysis.random_forest_analysis()
+
+
+#     # fig_nationality_image.savefig('./images/rider_nationality.png', dpi=300, bbox_inches='tight')
+#     # fig_unique_bikes_image.savefig('./images/unique_bikes.png', dpi=300, bbox_inches='tight')
+#     # fig_average_speeds.savefig('./images/avg_speeds.png', dpi=300, bbox_inches='tight')
+#     # fig_unique_riders_image.savefig('./images/unique_riders.png', dpi=300, bbox_inches='tight')
+#     # fig_wind_speed_scatter.savefig('./images/wind_speed_scatter.png', dpi=300, bbox_inches='tight')
+#     # fig_wind_speed_bar.savefig('./images/wind_speed_bar.png', dpi=300, bbox_inches='tight')
+#     # fig_rfr_predictions.savefig('./images/rfr_plot.png', dpi=300, bbox_inches='tight')
+#     # fig_rfr_residuals.savefig('./images/rfr_residuals.png', dpi=300, bbox_inches='tight')#
+#     # fig_records_per_year_image.savefig('./images/ecord.png', dpi=300, bbox_inches='tight')
+
+
+
+# Create Dash app
+app = dash.Dash(__name__)
+
+# Initialize your data
+race_info = RaceInformation(Path(__file__).with_name('race_results.xlsx'))
+race_analysis = RaceAnalysis(race_info)
+
+# Define the layout
+app.layout = html.Div([
+    html.H1('World Human Powered Speed Challenge Dashboard'),
+    
+    dcc.Tabs([
+        dcc.Tab(label='Rider Nationality', children=[
+            dcc.Graph(id='rider-nationality-graph')
+        ]),
+        dcc.Tab(label='Unique Bikes', children=[
+            dcc.Graph(id='unique-bikes-graph')
+        ]),
+        dcc.Tab(label='Unique Riders', children=[
+            dcc.Graph(id='unique-riders-graph')
+        ]),
+        dcc.Tab(label='Yearly Average Speed', children=[
+            dcc.Graph(id='yearly-average-speed')
+        ]),
+        
+        dcc.Tab(label='Yearly Records', children=[
+            dcc.Graph(id='yearly-records')
+        ]),
+    ]),
+    
+    html.Div(id='stats-display')
+])
+
+# Define callbacks
+@app.callback(
+    Output('rider-nationality-graph', 'figure'),
+    Input('rider-nationality-graph', 'id')
+)
+def update_rider_nationality(id):
+    return race_analysis.rider_nationality()
+
+@app.callback(
+    Output('unique-bikes-graph', 'figure'),
+    Input('unique-bikes-graph', 'id')
+)
+def update_unique_bikes(id):
+    return race_analysis.unique_bikes()
+
+@app.callback(
+    Output('unique-riders-graph', 'figure'),
+    Input('unique-riders-graph', 'id')
+)
+def update_unique_riders(id):
+    return race_analysis.unique_riders()    
+
+@app.callback(
+    Output('yearly-average-speed', 'figure'),
+    Input('yearly-average-speed', 'id')
+)
+def update_yearly_average_speed(id):
+    return race_analysis.average_speed_per_year()
+
+
+@app.callback(
+    Output('yearly-records', 'figure'),
+    Input('yearly-records', 'id')
+)
+def update_yearly_records(id):
+    return race_analysis.records_per_year()
+
+# Add similar callbacks for other graphs
+
 if __name__ == '__main__':
-    race_info = RaceInformation(file_path)
-    analysis = RaceAnalysis(race_info)
-    # fig_nationality_image = analysis.rider_nationality()
-    # fig_unique_bikes_image = analysis.unique_bikes()
-    # fig_average_speeds = analysis.average_speed_per_year()
-    # fig_records_per_year_image = analysis.records_per_year()
-    # analysis.arion()
-    analysis.stats()
-    # fig_unique_riders_image = analysis.unique_riders()
-    # fig_wind_speed_scatter, fig_wind_speed_bar = analysis.wind_to_speed_leg()
-    # (fig_rfr_predictions, fig_rfr_residuals,
-    #  partial_dependency_plot_women,
-    #  partial_dependency_plot_men) = analysis.random_forest_analysis()
-
-
-    # fig_nationality_image.savefig('./images/rider_nationality.png', dpi=300, bbox_inches='tight')
-    # fig_unique_bikes_image.savefig('./images/unique_bikes.png', dpi=300, bbox_inches='tight')
-    # fig_average_speeds.savefig('./images/avg_speeds.png', dpi=300, bbox_inches='tight')
-    # fig_unique_riders_image.savefig('./images/unique_riders.png', dpi=300, bbox_inches='tight')
-    # fig_wind_speed_scatter.savefig('./images/wind_speed_scatter.png', dpi=300, bbox_inches='tight')
-    # fig_wind_speed_bar.savefig('./images/wind_speed_bar.png', dpi=300, bbox_inches='tight')
-    # fig_rfr_predictions.savefig('./images/rfr_plot.png', dpi=300, bbox_inches='tight')
-    # fig_rfr_residuals.savefig('./images/rfr_residuals.png', dpi=300, bbox_inches='tight')#
-    # fig_records_per_year_image.savefig('./images/ecord.png', dpi=300, bbox_inches='tight')
+    app.run_server(debug=True)
