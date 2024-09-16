@@ -1,5 +1,5 @@
 # WHPSC
-The World Human Powered Speed Challenge takes place each year in Battle Mountain, NV, where peopel from all over the globe compete for various records.
+The World Human Powered Speed Challenge takes place each year in Battle Mountain, NV, where people from all over the globe compete for various land speed records.
 
 
 # WHPSC_Race_Data
